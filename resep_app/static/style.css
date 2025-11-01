@@ -1,0 +1,205 @@
+/* Reset dasar */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Container utama */
+.container {
+    background: white;
+    padding: 2rem 3rem;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    text-align: center;
+    width: 90%;
+    max-width: 500px;
+}
+
+/* Header */
+h1 {
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    color: #555;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+}
+
+/* Form */
+.resep-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+label {
+    text-align: left;
+    font-weight: 600;
+    color: #444;
+}
+
+input[type="text"] {
+    padding: 0.8rem;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+
+input[type="text"]:focus {
+    border-color: #ff7e5f;
+    outline: none;
+}
+
+/* Tombol */
+.btn {
+    background: linear-gradient(90deg, #ff7e5f, #feb47b);
+    color: white;
+    border: none;
+    padding: 0.8rem;
+    font-size: 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(255, 126, 95, 0.4);
+}
+
+/* Footer */
+footer {
+    margin-top: 2rem;
+    font-size: 0.8rem;
+    color: #666;
+}
+/* Halaman hasil */
+.result-section {
+    margin-bottom: 1.5rem;
+    background: #fff5f0;
+    border-left: 4px solid #ff7e5f;
+    padding: 1rem;
+    border-radius: 10px;
+    text-align: left;
+}
+
+.highlight {
+    color: #ff7e5f;
+    font-weight: 700;
+}
+
+.message {
+    background: #fff0f0;
+    padding: 1rem;
+    border-radius: 10px;
+    border-left: 4px solid #ff5252;
+    color: #444;
+    margin-top: 1rem;
+}
+
+.resep-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.resep-card {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    text-align: left;
+    transition: transform 0.2s ease;
+}
+
+.resep-card:hover {
+    transform: translateY(-3px);
+}
+
+.resep-card h2 {
+    color: #ff7e5f;
+    margin-bottom: 0.5rem;
+}
+
+.rekomendasi {
+    background: #fff8f2;
+    padding: 1.2rem;
+    border-radius: 15px;
+    margin-top: 1.5rem;
+    text-align: left;
+}
+
+.rekomendasi ul {
+    margin-top: 0.5rem;
+    list-style: none;
+}
+
+.rekomendasi li {
+    padding: 0.5rem;
+    background: #fff;
+    border-radius: 8px;
+    margin-bottom: 0.4rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Tombol bawah */
+.save-form {
+    margin-top: 2rem;
+}
+
+.back-btn {
+    display: inline-block;
+    margin-top: 1rem;
+    color: #fff;
+    background: #888;
+    padding: 0.7rem 1.2rem;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.back-btn:hover {
+    background: #666;
+}
+.resep-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    text-align: left;
+    transition: transform 0.2s ease;
+}
+
+.resep-card img {
+    width: 100%;
+    max-width: 400px;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    object-fit: cover;
+    height: 250px;
+}
+
+.resep-info {
+    width: 100%;
+}
+
+.resep-card:hover {
+    transform: translateY(-4px);
+}

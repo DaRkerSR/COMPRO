@@ -1,0 +1,62 @@
+[
+    {
+        "bahan": ["nasi", "telur", "bawang putih", "kecap manis"],
+        "resep": "Nasi Goreng"
+    },
+    {
+        "bahan": ["telur", "garam", "bawang merah"],
+        "resep": "Telur Dadar"
+    },
+    {
+        "bahan": ["mie", "telur", "bawang merah", "kecap manis", "sayur kol"],
+        "resep": "Mie Goreng"
+    },
+    {
+        "bahan": ["ayam", "bawang putih", "ketumbar", "garam"],
+        "resep": "Ayam Goreng"
+    },
+    {
+        "bahan": ["ayam", "kecap manis", "bawang putih", "ketumbar", "kacang tanah"],
+        "resep": "Sate Ayam"
+    },
+    {
+        "bahan": ["ayam", "bawang putih", "kunyit", "soun"],
+        "resep": "Soto Ayam"
+    },
+    {
+        "bahan": ["labu", "kacang panjang", "jagung", "asam jawa"],
+        "resep": "Sayur Asem"
+    },
+    {
+        "bahan": ["tempe", "bawang putih", "kecap manis", "cabai merah"],
+        "resep": "Tempe Orek"
+    },
+    {
+        "bahan": ["kentang", "telur", "bawang goreng", "garam"],
+        "resep": "Perkedel Kentang"
+    },
+    {
+        "bahan": ["cabai merah", "tomat", "terasi"],
+        "resep": "Sambal Terasi"
+    },
+    {
+        "bahan": ["wortel", "kol", "brokoli", "bawang putih", "saus tiram"],
+        "resep": "Capcay Goreng"
+    },
+    {
+        "bahan": ["ayam", "wortel", "kentang", "bawang putih", "daun seledri"],
+        "resep": "Sup Ayam"
+    },
+    {
+        "bahan": ["beras", "santan", "serai", "daun salam"],
+        "resep": "Nasi Uduk"
+    },
+    {
+        "bahan": ["kangkung", "bawang putih", "cabai merah", "saus tiram"],
+        "resep": "Tumis Kangkung"
+    },
+    {
+        "bahan": ["ikan", "kecap manis", "bawang putih", "jeruk nipis", "madu"],
+        "resep": "Ikan Bakar"
+    }
+]

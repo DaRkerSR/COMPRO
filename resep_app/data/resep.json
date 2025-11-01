@@ -1,0 +1,38 @@
+[
+    {
+        "nama": "Nasi Goreng",
+        "bahan": ["nasi", "telur", "bawang putih", "kecap manis"],
+        "langkah": "Tumis bawang putih, masukkan telur, tambahkan nasi dan kecap, aduk rata.",
+        "gambar": "https://cdn.pixabay.com/photo/2016/03/05/19/02/rice-1239249_1280.jpg"
+    },
+    {
+        "nama": "Telur Dadar",
+        "bahan": ["telur", "garam", "minyak"],
+        "langkah": "Kocok telur dengan garam lalu goreng di minyak panas.",
+        "gambar": "https://cdn.pixabay.com/photo/2021/03/12/05/25/omelette-6086935_1280.jpg"
+    },
+    {
+        "nama": "Mie Goreng",
+        "bahan": ["mie", "telur", "bawang merah", "kecap manis"],
+        "langkah": "Rebus mie, tumis bawang, masukkan telur dan mie, beri kecap manis.",
+        "gambar": "images/miegoreng.jpg"
+    },
+    {
+        "nama": "Sate Ayam",
+        "bahan": ["ayam", "kecap manis", "bawang putih", "ketumbar", "kacang tanah"],
+        "langkah": "Tusuk ayam, panggang, oles dengan bumbu kacang dan kecap.",
+        "gambar": "https://cdn.pixabay.com/photo/2021/03/04/04/09/satay-6067163_1280.jpg"
+    },
+    {
+        "nama": "Soto Ayam",
+        "bahan": ["ayam", "bawang putih", "kunyit", "soun"],
+        "langkah": "Rebus ayam dengan bumbu halus, tambahkan soun dan bahan pelengkap.",
+        "gambar": "https://cdn.pixabay.com/photo/2017/01/27/13/44/soto-2019382_1280.jpg"
+    },
+    {
+        "nama": "Tempe Orek",
+        "bahan": ["tempe", "bawang putih", "kecap manis", "cabai merah"],
+        "langkah": "Goreng tempe, tumis bumbu, masukkan kecap dan tempe goreng.",
+        "gambar": "https://cdn.pixabay.com/photo/2020/05/23/14/09/tempeh-5208630_1280.jpg"
+    }
+]

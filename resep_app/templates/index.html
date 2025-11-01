@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rekomendasi Resep Makanan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🍳 Rekomendasi Resep Berdasarkan Bahan</h1>
+            <p class="subtitle">Temukan ide masakan dari bahan yang ada di dapurmu!</p>
+        </header>
+
+        <form action="/rekomendasi" method="POST" class="resep-form">
+            <label for="bahan">Masukkan bahan-bahanmu:</label>
+            <input type="text" id="bahan" name="bahan" placeholder="Contoh: nasi, telur, bawang putih" required>
+            
+            <button type="submit" class="btn">🔍 Cari Resepsi AI</button>
+        </form>
+
+        <footer>
+            <p>✨ Dibuat dengan Flask & AI — oleh <strong>Kelompok 1</strong></p>
+        </footer>
+    </div>
+</body>
+</html>

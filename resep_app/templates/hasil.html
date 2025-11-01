@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hasil Rekomendasi Resep</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f9fafc;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      color: #ff7f50;
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1rem;
+    }
+
+    .result-section {
+      background: #fff9f5;
+      border: 1px solid #ffd4b3;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 25px;
+    }
+
+    .highlight {
+      color: #ff6600;
+      font-weight: bold;
+    }
+
+    .resep-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .resep-card {
+      display: flex;
+      background: #fffaf3;
+      border: 1px solid #f0e1c6;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s;
+    }
+
+    .resep-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .resep-card img {
+      width: 180px;
+      height: 140px;
+      object-fit: cover;
+    }
+
+    .resep-info {
+      padding: 15px;
+    }
+
+    .resep-info h2 {
+      margin: 0;
+      color: #d65a00;
+    }
+
+    .resep-info p {
+      margin: 5px 0;
+      font-size: 0.95rem;
+      color: #444;
+    }
+
+    .rekomendasi {
+      background: #f7faff;
+      border: 1px solid #cfe0ff;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 25px;
+    }
+
+    .rekomendasi h3 {
+      color: #0066cc;
+      margin-bottom: 10px;
+    }
+
+    .rekomendasi ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .rekomendasi li {
+      background: #eaf2ff;
+      margin-bottom: 6px;
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+
+    .message {
+      background: #fff4e5;
+      border: 1px solid #ffc48c;
+      border-radius: 12px;
+      padding: 10px;
+      margin-top: 10px;
+    }
+
+    .save-form {
+      text-align: center;
+      margin-top: 25px;
+    }
+
+    .btn, .back-btn {
+      background: #ff7f50;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: bold;
+      display: inline-block;
+      transition: background 0.3s;
+    }
+
+    .btn:hover, .back-btn:hover {
+      background: #ff5c25;
+    }
+
+    .back-btn {
+      margin-top: 15px;
+      display: block;
+      text-align: center;
+    }
+
+    .no-result {
+      text-align: center;
+      font-style: italic;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🤖 Rekomendasi Resep AI</h1>
+      <p class="subtitle">Berikut hasil rekomendasi dari bahan yang kamu masukkan 🍳</p>
+    </header>
+
+    <div class="result-section">
+      <p><strong>Bahan kamu:</strong> {{ ', '.join(bahan) }}</p>
+
+      {% if prediksi %}
+        <p><strong>Prediksi utama AI:</strong> <span class="highlight">{{ prediksi }}</span></p>
+      {% endif %}
+
+      {% if pesan %}
+        <div class="message">
+          <p>{{ pesan }}</p>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if hasil %}
+      <div class="resep-list">
+        {% for r in hasil %}
+          <div class="resep-card">
+            <img src="{{ url_for('static', filename=r.gambar) }}" alt="Gambar {{ r.nama }}">
+            <div class="resep-info">
+              <h2>{{ r.nama }}</h2>
+              <p><strong>Bahan:</strong> {{ ', '.join(r.bahan) }}</p>
+              <p><strong>Langkah:</strong> {{ r.langkah }}</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% elif rekomendasi %}
+      <div class="rekomendasi">
+        <h3>🍴 Rekomendasi lain yang mirip:</h3>
+        <ul>
+          {% for r in rekomendasi %}
+            <li>{{ r }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% else %}
+      <p class="no-result">😅 Tidak ada resep yang cocok ditemukan.</p>
+    {% endif %}
+
+    <form action="/simpan" method="POST" class="save-form">
+      <input type="hidden" name="bahan" value="{{ ','.join(bahan) }}">
+      <input type="hidden" name="resep" value="{{ prediksi }}">
+      <button type="submit" class="btn">💾 Simpan Rekomendasi Ini</button>
+    </form>
+
+    <a href="/" class="back-btn">🔙 Kembali ke Beranda</a>
+  </div>
+</body>
+</html>
