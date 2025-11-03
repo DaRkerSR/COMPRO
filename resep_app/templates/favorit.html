@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hasil Rekomendasi Resep</title>
+  <title>Resep Favorit</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     body {
@@ -39,19 +39,6 @@
       font-size: 1rem;
     }
 
-    .result-section {
-      background: #fff9f5;
-      border: 1px solid #ffd4b3;
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 25px;
-    }
-
-    .highlight {
-      color: #ff6600;
-      font-weight: bold;
-    }
-
     .resep-list {
       display: flex;
       flex-direction: column;
@@ -80,6 +67,7 @@
 
     .resep-info {
       padding: 15px;
+      flex: 1;
     }
 
     .resep-info h2 {
@@ -93,46 +81,22 @@
       color: #444;
     }
 
-    .rekomendasi {
-      background: #f7faff;
-      border: 1px solid #cfe0ff;
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 25px;
-    }
-
-    .rekomendasi h3 {
-      color: #0066cc;
-      margin-bottom: 10px;
-    }
-
-    .rekomendasi ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .rekomendasi li {
-      background: #eaf2ff;
-      margin-bottom: 6px;
+    .hapus-btn {
+      background: #ff4500;
+      color: white;
+      border: none;
       padding: 8px 12px;
       border-radius: 8px;
-    }
-
-    .message {
-      background: #fff4e5;
-      border: 1px solid #ffc48c;
-      border-radius: 12px;
-      padding: 10px;
+      cursor: pointer;
+      font-weight: bold;
       margin-top: 10px;
     }
 
-    .save-form {
-      text-align: center;
-      margin-top: 25px;
+    .hapus-btn:hover {
+      background: #e63900;
     }
 
-    .btn, .back-btn {
+    .back-btn {
       background: #ff7f50;
       color: white;
       border: none;
@@ -143,19 +107,14 @@
       font-weight: bold;
       display: inline-block;
       transition: background 0.3s;
+      margin-top: 25px;
     }
 
-    .btn:hover, .back-btn:hover {
+    .back-btn:hover {
       background: #ff5c25;
     }
 
-    .back-btn {
-      margin-top: 15px;
-      display: block;
-      text-align: center;
-    }
-
-    .no-result {
+    .no-favorit {
       text-align: center;
       font-style: italic;
       color: #888;
@@ -165,55 +124,30 @@
 <body>
   <div class="container">
     <header>
-      <h1>🤖 Rekomendasi Resep AI</h1>
-      <p class="subtitle">Berikut hasil rekomendasi dari bahan yang kamu masukkan 🍳</p>
+      <h1>❤️ Resep Favorit Anda</h1>
+      <p class="subtitle">Daftar resep yang telah Anda simpan</p>
     </header>
 
-    <div class="result-section">
-      <p><strong>Bahan kamu:</strong> {{ ', '.join(bahan) }}</p>
-
-      {% if prediksi %}
-        <p><strong>Prediksi utama AI:</strong> <span class="highlight">{{ prediksi }}</span></p>
-      {% endif %}
-
-      {% if pesan %}
-        <div class="message">
-          <p>{{ pesan }}</p>
-        </div>
-      {% endif %}
-    </div>
-
-    {% if hasil %}
+    {% if favorit %}
       <div class="resep-list">
-        {% for r in hasil %}
+        {% for r in favorit %}
           <div class="resep-card">
             <img src="{{ url_for('static', filename=r.gambar) }}" alt="Gambar {{ r.nama }}">
             <div class="resep-info">
               <h2>{{ r.nama }}</h2>
               <p><strong>Bahan:</strong> {{ ', '.join(r.bahan) }}</p>
               <p><strong>Langkah:</strong> {{ r.langkah }}</p>
+              <form action="/hapus" method="POST" style="display: inline;">
+                <input type="hidden" name="nama" value="{{ r.nama }}">
+                <button type="submit" class="hapus-btn">🗑️ Hapus</button>
+              </form>
             </div>
           </div>
         {% endfor %}
       </div>
-    {% elif rekomendasi %}
-      <div class="rekomendasi">
-        <h3>🍴 Rekomendasi lain yang mirip:</h3>
-        <ul>
-          {% for r in rekomendasi %}
-            <li>{{ r }}</li>
-          {% endfor %}
-        </ul>
-      </div>
     {% else %}
-      <p class="no-result">😅 Tidak ada resep yang cocok ditemukan.</p>
+      <p class="no-favorit">😢 Belum ada resep favorit. Simpan resep dari hasil rekomendasi!</p>
     {% endif %}
-
-    <form action="/simpan" method="POST" class="save-form">
-      <input type="hidden" name="bahan" value="{{ ','.join(bahan) }}">
-      <input type="hidden" name="resep" value="{{ prediksi }}">
-      <button type="submit" class="btn">💾 Simpan ke Favorit</button>
-    </form>
 
     <a href="/" class="back-btn">🔙 Kembali ke Beranda</a>
   </div>

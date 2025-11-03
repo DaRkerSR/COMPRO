@@ -36,6 +36,16 @@ resep_bahan_texts = [" ".join(r["bahan"]) for r in resep_data]
 resep_bahan_clean = [clean_text(t) for t in resep_bahan_texts]
 resep_embeddings = embedder.encode(resep_bahan_clean, normalize_embeddings=True)
 
+# --- Load atau buat data favorit ---
+favorit_file = "data/favorit.json"
+try:
+    with open(favorit_file, "r", encoding="utf-8") as f:
+        favorit_data = json.load(f)
+except FileNotFoundError:
+    favorit_data = []
+    with open(favorit_file, "w", encoding="utf-8") as f:
+        json.dump(favorit_data, f, ensure_ascii=False, indent=4)
+
 
 @app.route("/")
 def index():
@@ -82,6 +92,38 @@ def rekomendasi():
         rekomendasi=rekomendasi_menu,
         pesan=None
     )
+
+
+@app.route("/simpan", methods=["POST"])
+def simpan():
+    bahan = request.form["bahan"]
+    resep = request.form["resep"]
+    if resep and resep not in [f["nama"] for f in favorit_data]:
+        favorit_data.append({"nama": resep, "bahan": bahan})
+        with open(favorit_file, "w", encoding="utf-8") as f:
+            json.dump(favorit_data, f, ensure_ascii=False, indent=4)
+    return redirect("/favorit")
+
+
+@app.route("/favorit")
+def favorit():
+    favorit_resep = []
+    for fav in favorit_data:
+        for r in resep_data:
+            if r["nama"] == fav["nama"]:
+                favorit_resep.append(r)
+                break
+    return render_template("favorit.html", favorit=favorit_resep)
+
+
+@app.route("/hapus", methods=["POST"])
+def hapus():
+    nama = request.form["nama"]
+    global favorit_data
+    favorit_data = [f for f in favorit_data if f["nama"] != nama]
+    with open(favorit_file, "w", encoding="utf-8") as f:
+        json.dump(favorit_data, f, ensure_ascii=False, indent=4)
+    return redirect("/favorit")
 
 
 if __name__ == "__main__":

@@ -80,6 +80,29 @@ input[type="text"]:focus {
     box-shadow: 0 4px 10px rgba(255, 126, 95, 0.4);
 }
 
+/* Favorit Section */
+.favorit-section {
+    margin-top: 1.5rem;
+}
+
+.favorit-btn {
+    background: linear-gradient(90deg, #ff7e5f, #feb47b);
+    color: white;
+    border: none;
+    padding: 0.8rem;
+    font-size: 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.favorit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(255, 126, 95, 0.4);
+}
+
 /* Footer */
 footer {
     margin-top: 2rem;
