@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resep Favorit</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -122,6 +123,20 @@
   </style>
 </head>
 <body>
+  <div class="header-actions">
+    {% if session.get('username') %}
+      <span style="margin-right:6px;">Halo, <strong>{{ session.get('username') }}</strong></span>
+      <a class="btn" href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+      <a class="btn" href="{{ url_for('login') }}">Login</a>
+      <a class="btn" href="{{ url_for('register') }}">Register</a>
+    {% endif %}
+  </div>
+  {% if session.get('role') == 'admin' %}
+    <div class="admin-link">
+      <a class="btn" href="{{ url_for('admin_panel') }}">Admin</a>
+    </div>
+  {% endif %}
   <div class="container">
     <header>
       <h1>❤️ Resep Favorit Anda</h1>
@@ -137,10 +152,15 @@
               <h2>{{ r.nama }}</h2>
               <p><strong>Bahan:</strong> {{ ', '.join(r.bahan) }}</p>
               <p><strong>Langkah:</strong> {{ r.langkah }}</p>
-              <form action="/hapus" method="POST" style="display: inline;">
-                <input type="hidden" name="nama" value="{{ r.nama }}">
-                <button type="submit" class="hapus-btn">🗑️ Hapus</button>
-              </form>
+              {% if session.get('role') == 'admin' or session.get('username') == r.saved_by %}
+                <form action="/hapus" method="POST" style="display: inline;">
+                  <input type="hidden" name="nama" value="{{ r.nama }}">
+                  <button type="submit" class="hapus-btn">🗑️ Hapus</button>
+                </form>
+              {% endif %}
+              {% if session.get('role') == 'admin' %}
+                <p><small>Saved by: {{ r.saved_by }}</small></p>
+              {% endif %}
             </div>
           </div>
         {% endfor %}
@@ -151,5 +171,18 @@
 
     <a href="/" class="back-btn">🔙 Kembali ke Beranda</a>
   </div>
+  <!-- SmartchefAI widget -->
+  <div id="smartchef-widget">
+    <div class="sc-toggle">SmartchefAI</div>
+    <div class="sc-window hidden">
+      <div class="sc-header">SmartchefAI <button class="sc-close">×</button></div>
+      <div class="sc-messages"></div>
+      <form class="sc-form">
+        <input class="sc-input" type="text" placeholder="Tanya tentang bahan atau resep...">
+        <button class="sc-send" type="submit">Kirim</button>
+      </form>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
 </body>
 </html>

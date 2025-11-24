@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
+  <style>
+    .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
+    .small-form { display:inline-block; margin-left:6px; }
+    .danger { background:#ff6b6b; }
+  </style>
+</head>
+<body>
+  <div class="header-actions">
+    {% if session.get('username') %}
+      <span style="margin-right:6px;">Halo, <strong>{{ session.get('username') }}</strong></span>
+      <a class="btn" href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+      <a class="btn" href="{{ url_for('login') }}">Login</a>
+      <a class="btn" href="{{ url_for('register') }}">Register</a>
+    {% endif %}
+  </div>
+
+  <div class="container admin-container">
+    <header>
+      <h1>🔧 Admin Panel</h1>
+      <p class="subtitle">Lihat dan kelola users serta favorites</p>
+    </header>
+    <div class="admin-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+      <section>
+        <h2>Users</h2>
+        <div style="overflow:auto;">
+        <table>
+          <thead><tr><th>Username</th><th>Role</th><th>Aksi</th></tr></thead>
+          <tbody>
+            {% for u in users %}
+              <tr>
+                <td>{{ u.username }}</td>
+                <td>{{ u.role }}</td>
+                <td>
+                  {% if u.username != session.get('username') %}
+                    <form class="small-form" method="POST" action="{{ url_for('admin_user_action') }}">
+                      <input type="hidden" name="username" value="{{ u.username }}">
+                      {% if u.role != 'admin' %}
+                        <input type="hidden" name="action" value="promote">
+                        <button class="btn" type="submit">Promote</button>
+                      {% else %}
+                        <input type="hidden" name="action" value="demote">
+                        <button class="btn" type="submit">Demote</button>
+                      {% endif %}
+                    </form>
+                    <form class="small-form" method="POST" action="{{ url_for('admin_user_action') }}">
+                      <input type="hidden" name="username" value="{{ u.username }}">
+                      <input type="hidden" name="action" value="delete">
+                      <button class="btn danger" type="submit">Delete</button>
+                    </form>
+                  {% else %}
+                    <em>(ini Anda)</em>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Favorites</h2>
+        <div style="overflow:auto;">
+        <table>
+          <thead><tr><th>Username</th><th>Nama Resep</th><th>Bahan</th><th>Aksi</th></tr></thead>
+          <tbody>
+            {% for f in favorites %}
+              <tr>
+                <td>{{ f.username }}</td>
+                <td>{{ f.nama }}</td>
+                <td style="max-width:300px;">{{ f.bahan }}</td>
+                <td>
+                  <form method="POST" action="{{ url_for('hapus') }}">
+                    <input type="hidden" name="nama" value="{{ f.nama }}">
+                    <button class="btn danger" type="submit">Hapus</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      </section>
+    </div>
+
+    <a href="/" class="back-btn">🔙 Kembali ke Beranda</a>
+  </div>
+  <!-- SmartchefAI widget -->
+  <div id="smartchef-widget">
+    <div class="sc-toggle">SmartchefAI</div>
+    <div class="sc-window hidden">
+      <div class="sc-header">SmartchefAI <button class="sc-close">×</button></div>
+      <div class="sc-messages"></div>
+      <form class="sc-form">
+        <input class="sc-input" type="text" placeholder="Tanya tentang bahan atau resep...">
+        <button class="sc-send" type="submit">Kirim</button>
+      </form>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
+</body>
+</html>

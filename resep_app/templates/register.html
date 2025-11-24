@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
+</head>
+<body>
+  <div class="header-actions">
+    {% if session.get('username') %}
+      <span style="margin-right:6px;">Halo, <strong>{{ session.get('username') }}</strong></span>
+      <a class="btn" href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+      <a class="btn" href="{{ url_for('login') }}">Login</a>
+      <a class="btn" href="{{ url_for('register') }}">Register</a>
+    {% endif %}
+  </div>
+  {% if session.get('role') == 'admin' %}
+    <div class="admin-link">
+      <a class="btn" href="{{ url_for('admin_panel') }}">Admin</a>
+    </div>
+  {% endif %}
+  <div class="container">
+    <header>
+      <h1>📝 Daftar</h1>
+      <p class="subtitle">Buat akun baru untuk menyimpan resep favorit</p>
+    </header>
+
+    <form action="{{ url_for('register') }}" method="POST" class="resep-form">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" required>
+
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required>
+
+      <button type="submit" class="btn">Daftar</button>
+    </form>
+
+    <p style="text-align:center;margin-top:16px;">Sudah punya akun? <a href="{{ url_for('login') }}">Login</a></p>
+
+    <a href="/" class="back-btn">🔙 Kembali ke Beranda</a>
+  </div>
+  <!-- SmartchefAI widget -->
+  <div id="smartchef-widget">
+    <div class="sc-toggle">SmartchefAI</div>
+    <div class="sc-window hidden">
+      <div class="sc-header">SmartchefAI <button class="sc-close">×</button></div>
+      <div class="sc-messages"></div>
+      <form class="sc-form">
+        <input class="sc-input" type="text" placeholder="Tanya tentang bahan atau resep...">
+        <button class="sc-send" type="submit">Kirim</button>
+      </form>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
+</body>
+</html>

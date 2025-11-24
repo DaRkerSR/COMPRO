@@ -1,0 +1,14 @@
+/* SmartchefAI chat widget styles */
+#smartchef-widget { position: fixed; left: 16px; bottom: 16px; z-index: 1200; font-family: Poppins, sans-serif; }
+.sc-toggle { background: linear-gradient(90deg,#ff7e5f,#feb47b); color: #fff; padding: 8px 12px; border-radius: 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
+.sc-window { width: 320px; max-height: 420px; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); overflow: hidden; display: flex; flex-direction: column; margin-top: 8px; }
+.sc-window.hidden { display: none; }
+.sc-header { background: #ff7e5f; color: white; padding: 10px; display:flex; align-items:center; justify-content:space-between; }
+.sc-messages { padding: 10px; overflow-y: auto; flex: 1; background: #fffaf3; }
+.sc-message { margin-bottom: 8px; padding: 8px 10px; border-radius: 8px; max-width: 90%; }
+.sc-message.user { background: #ffd9c7; align-self: flex-end; }
+.sc-message.bot { background: #fff; border: 1px solid #eee; align-self: flex-start; }
+.sc-form { display:flex; gap:8px; padding: 8px; border-top: 1px solid #eee; }
+.sc-input { flex:1; padding:8px; border-radius:8px; border:1px solid #ddd; }
+.sc-send { background:#ff7e5f; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
+@media (max-width:420px){ .sc-window{ width: 90vw; right:8px; left:8px; } }

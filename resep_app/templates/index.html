@@ -5,12 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rekomendasi Resep Makanan</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
 </head>
 <body>
+    <div class="header-actions">
+        {% if session.get('username') %}
+            <span style="margin-right:6px;">Halo, <strong>{{ session.get('username') }}</strong></span>
+            <a class="btn" href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+            <a class="btn" href="{{ url_for('login') }}">Login</a>
+            <a class="btn" href="{{ url_for('register') }}">Register</a>
+        {% endif %}
+    </div>
+    {% if session.get('role') == 'admin' %}
+      <div class="admin-link">
+        <a class="btn" href="{{ url_for('admin_panel') }}">Admin</a>
+      </div>
+    {% endif %}
     <div class="container">
         <header>
-            <h1>🍳 Rekomendasi Resep Berdasarkan Bahan</h1>
-            <p class="subtitle">Temukan ide masakan dari bahan yang ada di dapurmu!</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <h1>🍳 Rekomendasi Resep Berdasarkan Bahan</h1>
+                    <p class="subtitle">Temukan ide masakan dari bahan yang ada di dapurmu!</p>
+                </div>
+                <div>
+                    <!-- header-actions moved outside the container for top-right placement -->
+                </div>
+            </div>
         </header>
 
         <form action="/rekomendasi" method="POST" class="resep-form">
@@ -28,5 +50,18 @@
             <p>✨ Dibuat dengan Flask & AI — oleh <strong>Kelompok 1</strong></p>
         </footer>
     </div>
+        <!-- SmartchefAI widget -->
+        <div id="smartchef-widget">
+            <div class="sc-toggle">SmartchefAI</div>
+            <div class="sc-window hidden">
+                <div class="sc-header">SmartchefAI <button class="sc-close">×</button></div>
+                <div class="sc-messages"></div>
+                <form class="sc-form">
+                    <input class="sc-input" type="text" placeholder="Tanya tentang bahan atau resep...">
+                    <button class="sc-send" type="submit">Kirim</button>
+                </form>
+            </div>
+        </div>
+        <script src="{{ url_for('static', filename='chat.js') }}"></script>
 </body>
 </html>

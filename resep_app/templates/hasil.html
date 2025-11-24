@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hasil Rekomendasi Resep</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -163,6 +164,20 @@
   </style>
 </head>
 <body>
+  <div class="header-actions">
+    {% if session.get('username') %}
+      <span style="margin-right:6px;">Halo, <strong>{{ session.get('username') }}</strong></span>
+      <a class="btn" href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+      <a class="btn" href="{{ url_for('login') }}">Login</a>
+      <a class="btn" href="{{ url_for('register') }}">Register</a>
+    {% endif %}
+  </div>
+  {% if session.get('role') == 'admin' %}
+    <div class="admin-link">
+      <a class="btn" href="{{ url_for('admin_panel') }}">Admin</a>
+    </div>
+  {% endif %}
   <div class="container">
     <header>
       <h1>🤖 Rekomendasi Resep AI</h1>
@@ -171,6 +186,18 @@
 
     <div class="result-section">
       <p><strong>Bahan kamu:</strong> {{ ', '.join(bahan) }}</p>
+      {% if missing %}
+        <div class="message">
+          <p><strong>Perhatian:</strong> Bahan berikut tidak ditemukan: {{ ', '.join(missing) }}.</p>
+          {% if suggestions %}
+            <p>Usulan serupa:
+              {% for k, v in suggestions.items() %}
+                <br><strong>{{ k }}</strong> → {{ v | join(', ') }}
+              {% endfor %}
+            </p>
+          {% endif %}
+        </div>
+      {% endif %}
 
       {% if prediksi %}
         <p><strong>Prediksi utama AI:</strong> <span class="highlight">{{ prediksi }}</span></p>
@@ -183,7 +210,7 @@
       {% endif %}
     </div>
 
-    {% if hasil %}
+    {% if hasil and (not pesan or forced) %}
       <div class="resep-list">
         {% for r in hasil %}
           <div class="resep-card">
@@ -196,7 +223,7 @@
           </div>
         {% endfor %}
       </div>
-    {% elif rekomendasi %}
+    {% elif rekomendasi and (not pesan or forced) %}
       <div class="rekomendasi">
         <h3>🍴 Rekomendasi lain yang mirip:</h3>
         <ul>
@@ -206,16 +233,56 @@
         </ul>
       </div>
     {% else %}
-      <p class="no-result">😅 Tidak ada resep yang cocok ditemukan.</p>
+      <div class="resep-list">
+        <div class="resep-card">
+          <div class="resep-info">
+            <h2>🔍 Bahan / resep ini tidak tersedia</h2>
+            <p>Maaf — hasil pencarian tidak sesuai dengan koleksi resep kami.</p>
+            {% if missing %}
+              <p><strong>Bahan tidak ditemukan:</strong> {{ ', '.join(missing) }}</p>
+            {% endif %}
+            {% if suggestions %}
+              <p><strong>Usulan serupa:</strong>
+                {% for k, v in suggestions.items() %}
+                  <br>{{ k }} → {{ v | join(', ') }}
+                {% endfor %}
+              </p>
+            {% endif %}
+            <p class="no-result">Coba kata kunci lain atau periksa ejaan.</p>
+            <form action="/rekomendasi" method="POST" style="margin-top:12px;">
+              <input type="hidden" name="bahan" value="{{ ','.join(bahan) }}">
+              <input type="hidden" name="force" value="1">
+              <button type="submit" class="btn">Tampilkan hasil mirip</button>
+            </form>
+          </div>
+        </div>
+      </div>
     {% endif %}
 
     <form action="/simpan" method="POST" class="save-form">
-      <input type="hidden" name="bahan" value="{{ ','.join(bahan) }}">
-      <input type="hidden" name="resep" value="{{ prediksi }}">
-      <button type="submit" class="btn">💾 Simpan ke Favorit</button>
+      {% if session.get('username') and prediksi %}
+        <input type="hidden" name="bahan" value="{{ ','.join(bahan) }}">
+        <input type="hidden" name="resep" value="{{ prediksi }}">
+        <button type="submit" class="btn">💾 Simpan ke Favorit</button>
+      {% elif not session.get('username') and prediksi %}
+        <p style="text-align:center;">Silakan <a href="{{ url_for('login') }}">login</a> untuk menyimpan resep ke favorit.</p>
+      {% endif %}
     </form>
 
     <a href="/" class="back-btn">🔙 Kembali ke Beranda</a>
   </div>
+  <!-- SmartchefAI widget -->
+  <div id="smartchef-widget">
+    <div class="sc-toggle">SmartchefAI</div>
+    <div class="sc-window hidden">
+      <div class="sc-header">SmartchefAI <button class="sc-close">×</button></div>
+      <div class="sc-messages"></div>
+      <form class="sc-form">
+        <input class="sc-input" type="text" placeholder="Tanya tentang bahan atau resep...">
+        <button class="sc-send" type="submit">Kirim</button>
+      </form>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
 </body>
 </html>

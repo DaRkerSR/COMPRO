@@ -38,6 +38,46 @@ h1 {
     margin-bottom: 2rem;
 }
 
+/* Header actions (login / register) placed top-right inside container */
+.header-actions {
+    position: fixed;
+    right: 20px;
+    top: 20px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    z-index: 999;
+}
+
+/* Admin link fixed top-left */
+.admin-link {
+    position: fixed;
+    left: 20px;
+    top: 20px;
+    z-index: 999;
+}
+
+.admin-link .btn {
+    padding: 0.45rem 0.9rem;
+    font-size: 0.9rem;
+}
+
+/* Wider container used only for admin pages */
+.admin-container {
+    max-width: 1100px;
+}
+
+.header-actions .btn {
+    padding: 0.45rem 0.9rem;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.header-actions a {
+    text-decoration: none;
+}
+
 /* Form */
 .resep-form {
     display: flex;
@@ -51,14 +91,19 @@ label {
     color: #444;
 }
 
-input[type="text"] {
+/* Apply same visual style to text, password and email inputs */
+input[type="text"],
+input[type="password"],
+input[type="email"] {
     padding: 0.8rem;
     border: 2px solid #ddd;
     border-radius: 10px;
     transition: 0.3s;
 }
 
-input[type="text"]:focus {
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus {
     border-color: #ff7e5f;
     outline: none;
 }
