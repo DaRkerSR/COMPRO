@@ -6,8 +6,21 @@
   <title>Register</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
+  <style>
+    /* Ensure same background and button style as index */
+    body { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
+    .btn { background: linear-gradient(90deg, #ff7e5f, #feb47b); color: white; border: none; padding: 0.8rem; font-size: 1rem; border-radius: 10px; cursor: pointer; transition: 0.3s; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(255, 126, 95, 0.4); }
+    .notif-container{position:fixed;top:16px;right:16px;z-index:10000;display:flex;flex-direction:column;gap:8px}
+    .notif{min-width:220px;padding:10px 14px;border-radius:8px;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.12);opacity:0;transform:translateY(-8px);transition:all .22s}
+    .notif.show{opacity:1;transform:none}
+    .notif.success{background:#28a745}
+    .notif.error{background:#d9534f}
+    .notif.info{background:#007bff}
+  </style>
 </head>
 <body>
+  <div id="notif-container" aria-live="polite" class="notif-container"></div>
   <div class="header-actions">
     {% if session.get('username') %}
       <span style="margin-right:6px;">Halo, <strong>{{ session.get('username') }}</strong></span>
@@ -28,7 +41,7 @@
       <p class="subtitle">Buat akun baru untuk menyimpan resep favorit</p>
     </header>
 
-    <form action="{{ url_for('register') }}" method="POST" class="resep-form">
+    <form id="register-form" class="resep-form">
       <label for="username">Username</label>
       <input type="text" id="username" name="username" required>
 
@@ -47,7 +60,7 @@
   </div>
   <!-- SmartchefAI widget -->
   <div id="smartchef-widget">
-    <div class="sc-toggle">SmartchefAI</div>
+    <div class="sc-toggle">Chat</div>
     <div class="sc-window hidden">
       <div class="sc-header">SmartchefAI <button class="sc-close">×</button></div>
       <div class="sc-messages"></div>
@@ -57,6 +70,61 @@
       </form>
     </div>
   </div>
+  <script>
+    const API_BASE = 'http://127.0.0.1:8000/api/auth';
+    function showNotif(type, message, timeout = 3500){
+      const c = document.getElementById('notif-container');
+      if(!c) return null;
+      const el = document.createElement('div');
+      el.className = `notif ${type}`;
+      el.textContent = message;
+      el.setAttribute('role','status');
+      c.appendChild(el);
+      requestAnimationFrame(()=> el.classList.add('show'));
+      if(timeout>0){
+        setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=> el.remove(),220); }, timeout);
+      }
+      return el;
+    }
+
+    document.getElementById('register-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const btn = this.querySelector('button[type="submit"]');
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Membuat...';
+      try {
+        const res = await fetch(`${API_BASE}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password })
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          showNotif('error', err.detail || 'Pendaftaran gagal');
+          btn.disabled = false;
+          btn.textContent = origText;
+          return;
+        }
+        const data = await res.json();
+        // sinkronisasi session Flask (opsional auto-login)
+        await fetch('/auth/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: data.username, role: data.role })
+        }).catch(() => {});
+        showNotif('success', `Akun ${data.username} berhasil dibuat.`);
+        setTimeout(()=> window.location.href = '/', 900);
+      } catch (err) {
+        showNotif('error', 'Terjadi kesalahan: ' + (err.message || err));
+        btn.disabled = false;
+        btn.textContent = origText;
+      }
+    });
+  </script>
   <script src="{{ url_for('static', filename='chat.js') }}"></script>
 </body>
 </html>

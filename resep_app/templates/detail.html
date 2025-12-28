@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Detail Resep - {{ r.nama }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>{{ r.nama }}</h1>
+      <p class="subtitle">Detail lengkap resep</p>
+    </header>
+
+    <div class="result-section">
+      {% if r.gambar %}
+        <div style="text-align:center; margin-bottom:12px;"><img src="{{ url_for('static', filename=r.gambar) }}" alt="{{ r.nama }}" style="max-width:100%; height:auto; border-radius:8px;"></div>
+      {% endif %}
+      <p><strong>Bahan:</strong></p>
+      <ul>
+        {% for ing in r.bahan | pretty_ingredients %}
+          <li>{{ ing }}</li>
+        {% endfor %}
+      </ul>
+      <p><strong>Langkah:</strong></p>
+      <ol>
+        {% for step in r.langkah | pretty_steps %}
+          <li>{{ step }}</li>
+        {% endfor %}
+      </ol>
+
+      <div style="margin-top:14px; display:flex; gap:10px;">
+        <form action="/simpan" method="POST" style="display:inline;">
+          <input type="hidden" name="bahan" value="{{ ','.join(r.bahan) }}">
+          <input type="hidden" name="resep" value="{{ r.nama }}">
+          <button class="btn" type="submit">⭐ Simpan ke Favorit</button>
+        </form>
+        <a class="btn" href="/favorit">Lihat Favorit</a>
+        <a class="btn" href="/" style="margin-left:auto;">🔙 Kembali</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

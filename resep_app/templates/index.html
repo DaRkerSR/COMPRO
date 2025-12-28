@@ -50,9 +50,24 @@
             <p>✨ Dibuat dengan Flask & AI — oleh <strong>Kelompok 1</strong></p>
         </footer>
     </div>
+        <!-- recipe detail modal -->
+        <div id="recipe-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:10000">
+            <div style="background:#fff;padding:18px;border-radius:12px;max-width:800px;width:95%;max-height:80vh;overflow:auto;">
+                <button id="modal-close" style="float:right">×</button>
+                <h3 id="modal-title"></h3>
+                <p id="modal-loves" style="color:#888;font-size:0.95rem"></p>
+                <h4>Bahan</h4>
+                <ul id="modal-ingredients"></ul>
+                <h4>Langkah</h4>
+                <div id="modal-steps" style="white-space:pre-wrap"></div>
+                <div style="text-align:right;margin-top:12px">
+                    <button id="modal-save" class="btn">💾 Simpan Favorit</button>
+                </div>
+            </div>
+        </div>
         <!-- SmartchefAI widget -->
         <div id="smartchef-widget">
-            <div class="sc-toggle">SmartchefAI</div>
+            <div class="sc-toggle">Chat</div>
             <div class="sc-window hidden">
                 <div class="sc-header">SmartchefAI <button class="sc-close">×</button></div>
                 <div class="sc-messages"></div>

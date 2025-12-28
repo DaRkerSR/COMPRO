@@ -6,7 +6,9 @@ import json
 import re
 import nltk
 import os
+import numpy as np
 from werkzeug.security import generate_password_hash, check_password_hash
+import requests
 
 # --- Pastikan stopwords Indonesia tersedia ---
 try:
@@ -20,6 +22,54 @@ stop_words = set(stopwords.words("indonesian"))
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 
+
+@app.template_filter('pretty_ingredients')
+def pretty_ingredients(value):
+    """Normalize ingredient list for display.
+
+    - Accepts a list or comma-separated string.
+    - Splits on commas or slashes and strips whitespace.
+    """
+    items = []
+    if value is None:
+        return items
+    if isinstance(value, str):
+        raw = [value]
+    else:
+        try:
+            raw = list(value)
+        except Exception:
+            raw = [str(value)]
+    for entry in raw:
+        if not entry:
+            continue
+        # replace '::' markers, then split on commas or slashes
+        s = re.sub(r"::", ":", str(entry))
+        parts = re.split(r"\s*[,/]\s*", s)
+        for p in parts:
+            p = p.strip()
+            if p:
+                items.append(p)
+    return items
+
+
+@app.template_filter('pretty_steps')
+def pretty_steps(value):
+    """Split recipe steps into readable paragraphs.
+
+    - Splits on '--' separators or newlines. Trims whitespace.
+    """
+    steps = []
+    if not value:
+        return steps
+    s = str(value)
+    parts = re.split(r"\s*--+\s*|\r?\n+", s)
+    for p in parts:
+        p = p.strip()
+        if p:
+            steps.append(p)
+    return steps
+
 # --- PREPROCESSING TEKS ---
 def clean_text(text):
     text = text.lower()
@@ -30,14 +80,120 @@ def clean_text(text):
 # --- MODEL EMBEDDING MULTIBAHASA ---
 embedder = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
 
-# --- Load data resep ---
-with open("data/resep.json", "r", encoding="utf-8") as f:
-    resep_data = json.load(f)
+# --- Load data resep (from local file if present; otherwise from SmartChef API) ---
+def load_recipes():
+    base_api = os.environ.get("SMARTCHEF_API", "http://127.0.0.1:8000/api")
+    # try local file first
+    try:
+        with open("data/resep.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        pass
 
-# Siapkan embedding semua bahan resep
-resep_bahan_texts = [" ".join(r["bahan"]) for r in resep_data]
+    # fallback: try to fetch from SmartChef API (search endpoint)
+    try:
+        # FastAPI search enforces `limit <= 100`; use 100 to avoid 422
+        resp = requests.get(f"{base_api}/recipes/search?limit=100", timeout=5)
+    except Exception as e:
+        print(f"[resep_app] Error connecting to SmartChef API at {base_api}: {e}")
+        resp = None
+
+    recipes = []
+    if resp is not None:
+        if not resp.ok:
+            print(f"[resep_app] API search returned status {resp.status_code}: {resp.text}")
+        else:
+            results = resp.json().get("results", [])
+            if not results:
+                print(f"[resep_app] API search returned empty results list")
+            for r in results:
+                rid = r.get("id_resep_makanan")
+                if not rid:
+                    url = r.get("url", "")
+                    try:
+                        parts = [p for p in url.split("/") if p]
+                        rid = int(parts[-2])
+                    except Exception:
+                        rid = None
+                if not rid:
+                    continue
+                try:
+                    det = requests.get(f"{base_api}/recipes/{rid}/detail", timeout=5)
+                    if not det.ok:
+                        print(f"[resep_app] detail {rid} returned {det.status_code}")
+                        continue
+                    d = det.json()
+                    ingredients = [ing.get("bahan") or "" for ing in d.get("ingredients", [])]
+                    recipes.append({
+                        "id_resep_makanan": rid,
+                        "nama": d.get("judul") or r.get("judul") or f"Resep {rid}",
+                        "bahan": ingredients,
+                        "langkah": d.get("steps", ""),
+                        "gambar": d.get("url") or d.get("preview") or r.get("preview") or "",
+                        "detail_url": f"{base_api}/recipes/{rid}/detail",
+                    })
+                except Exception as e:
+                    print(f"[resep_app] Exception fetching detail for {rid}: {e}")
+
+    # try popular endpoint as a secondary fallback
+    if not recipes:
+        try:
+            # popular endpoint allows up to 50; use 50 to avoid 422
+            pop = requests.get(f"{base_api}/recipes/popular?limit=50", timeout=5)
+            if pop.ok:
+                pop_list = pop.json()
+                for r in pop_list:
+                    rid = r.get("id_resep_makanan")
+                    if not rid:
+                        continue
+                    try:
+                        det = requests.get(f"{base_api}/recipes/{rid}/detail", timeout=5)
+                        if det.ok:
+                            d = det.json()
+                            ingredients = [ing.get("bahan") or "" for ing in d.get("ingredients", [])]
+                            recipes.append({
+                                "id_resep_makanan": rid,
+                                "nama": d.get("judul") or r.get("judul") or f"Resep {rid}",
+                                "bahan": ingredients,
+                                "langkah": d.get("steps", ""),
+                                "gambar": d.get("url") or d.get("preview") or r.get("preview") or "",
+                                "detail_url": f"{base_api}/recipes/{rid}/detail",
+                            })
+                    except Exception as e:
+                        print(f"[resep_app] Exception fetching popular detail for {rid}: {e}")
+        except Exception as e:
+            print(f"[resep_app] Error calling popular endpoint: {e}")
+
+    # final fallback: return collected recipes or empty list
+    if recipes:
+        return recipes
+    return []
+
+
+resep_data = load_recipes()
+print(f"[resep_app] Loaded {len(resep_data)} recipes")
+
+# Siapkan embedding semua bahan resep (may be empty)
+resep_bahan_texts = [" ".join(r.get("bahan", [])) for r in resep_data]
 resep_bahan_clean = [clean_text(t) for t in resep_bahan_texts]
-resep_embeddings = embedder.encode(resep_bahan_clean, normalize_embeddings=True)
+if resep_bahan_clean:
+    resep_embeddings = embedder.encode(resep_bahan_clean, normalize_embeddings=True)
+else:
+    import numpy as _np
+    resep_embeddings = _np.array([])
+
+
+def ensure_resep_embeddings_nonempty():
+    """Ensure module-level `resep_embeddings` is populated and 2D.
+
+    Raises Exception if embeddings cannot be computed.
+    """
+    global resep_embeddings
+    if not hasattr(resep_embeddings, "size") or getattr(resep_embeddings, "size", 0) == 0:
+        resep_embeddings = embedder.encode(resep_bahan_clean, normalize_embeddings=True)
+    # coerce to 2D array if a 1D array sneaks in
+    if getattr(resep_embeddings, "ndim", 1) == 1:
+        resep_embeddings = np.atleast_2d(resep_embeddings)
 
 # --- global token sets for recipes (used by chatbot quick replies)
 resep_tokens_global = [set(clean_text(" ".join(r.get("bahan", []))).split()) for r in resep_data]
@@ -193,7 +349,12 @@ def rekomendasi():
         # prepare user embedding for tiebreakers
         bahan_bersih = clean_text(" ".join(user_inputs))
         user_embed = embedder.encode([bahan_bersih], normalize_embeddings=True)
-        sim_scores = cosine_similarity(user_embed, resep_embeddings).flatten()
+        try:
+            ensure_resep_embeddings_nonempty()
+            sim_scores = cosine_similarity(np.atleast_2d(user_embed), np.atleast_2d(resep_embeddings)).flatten()
+        except Exception:
+            flash("Terjadi kesalahan pada perhitungan similarity.", "error")
+            return render_template("hasil.html", hasil=[], bahan=user_inputs, prediksi=None, rekomendasi=[], pesan="Terjadi kesalahan pada perhitungan similarity.")
 
         # sort by (exact score, semantic score)
         top_exact_sorted = sorted(top_exact, key=lambda t: (t[1], sim_scores[t[0]]), reverse=True)
@@ -204,12 +365,14 @@ def rekomendasi():
         pesan = None
         if missing:
             pesan = f"Beberapa bahan tidak ditemukan: {', '.join(missing)}."
+        # Return all top exact-match recipes so the frontend can show related items
+        hasil_list = hasil_resep
         return render_template(
             "hasil.html",
-            hasil=hasil_resep[:1],
+            hasil=hasil_list,
             bahan=user_inputs,
-            prediksi=hasil_resep[0]["nama"] if hasil_resep else None,
-            rekomendasi=[r["nama"] for r in hasil_resep[1:]],
+            prediksi=hasil_list[0]["nama"] if hasil_list else None,
+            rekomendasi=[r["nama"] for r in hasil_list[1:]],
             pesan=pesan,
             missing=missing,
             suggestions=suggestions,
@@ -218,7 +381,12 @@ def rekomendasi():
     # Fallback: semantic similarity as before
     bahan_bersih = clean_text(" ".join(user_inputs))
     user_embed = embedder.encode([bahan_bersih], normalize_embeddings=True)
-    sim_scores = cosine_similarity(user_embed, resep_embeddings).flatten()
+    try:
+        ensure_resep_embeddings_nonempty()
+        sim_scores = cosine_similarity(np.atleast_2d(user_embed), np.atleast_2d(resep_embeddings)).flatten()
+    except Exception:
+        flash("Terjadi kesalahan pada perhitungan similarity.", "error")
+        return render_template("hasil.html", hasil=[], bahan=user_inputs, prediksi=None, rekomendasi=[], pesan="Terjadi kesalahan pada perhitungan similarity.")
     top_idx = sim_scores.argsort()[-3:][::-1]
     hasil_resep = [resep_data[i] for i in top_idx]
     skor_tertinggi = sim_scores[top_idx[0]]
@@ -231,11 +399,12 @@ def rekomendasi():
         pesan = "🤔 AI belum yakin, tapi ini beberapa resep dengan bahan paling mirip:"
         if missing:
             pesan += f" Beberapa bahan tidak ditemukan: {', '.join(missing)}."
+        # Show related recipes even when confidence low so user can inspect alternatives
         return render_template(
             "hasil.html",
-            hasil=[],
+            hasil=hasil_resep,
             bahan=user_inputs,
-            prediksi=None,
+            prediksi=hasil_resep[0]["nama"] if hasil_resep else None,
             rekomendasi=[r["nama"] for r in hasil_resep],
             pesan=pesan,
             missing=missing,
@@ -249,12 +418,13 @@ def rekomendasi():
     if force and skor_tertinggi < 0.3:
         pesan_forced = "Menampilkan hasil meskipun confidence rendah (semantic fallback)."
 
+    # Return the top semantic results (all related), with the highest-scoring as prediction
     return render_template(
         "hasil.html",
-        hasil=[hasil_utama],
+        hasil=hasil_resep,
         bahan=user_inputs,
-        prediksi=hasil_utama["nama"],
-        rekomendasi=rekomendasi_menu,
+        prediksi=hasil_resep[0]["nama"] if hasil_resep else None,
+        rekomendasi=[r["nama"] for r in hasil_resep[1:]],
         pesan=pesan_forced,
         missing=missing,
         suggestions=suggestions,
@@ -288,6 +458,20 @@ def chat():
     return json.dumps({'reply': reply}), 200, {'Content-Type': 'application/json'}
 
 
+@app.route('/detail/<int:rid>')
+def detail(rid):
+    # find recipe by id or fallback to name match
+    recipe = next((r for r in resep_data if r.get('id_resep_makanan') == rid or str(r.get('id_resep_makanan')) == str(rid)), None)
+    if not recipe:
+        # try by name (rare fallback)
+        name = request.args.get('nama', '')
+        recipe = next((r for r in resep_data if r.get('nama','').lower() == name.lower()), None)
+    if not recipe:
+        flash('Resep tidak ditemukan.', 'error')
+        return redirect(url_for('index'))
+    return render_template('detail.html', r=recipe)
+
+
 @app.route("/simpan", methods=["POST"])
 def simpan():
     if "username" not in session:
@@ -310,16 +494,38 @@ def favorit():
     if "username" not in session:
         flash("Silakan login untuk melihat favorit.", "error")
         return redirect(url_for("login"))
-
     username = session["username"]
     role = session.get("role", "user")
-    # Admin sees all favorites; users see their own
+
+    # Try to fetch favorites from SmartChef API first
+    api_url = os.environ.get("SMARTCHEF_API", "http://127.0.0.1:8000/api/favorites")
+    favorit_resep = []
+    try:
+        resp = requests.get(f"{api_url}/{username}", timeout=3)
+        if resp.ok:
+            data = resp.json().get("favorites", [])
+            # Map API favorite entries to local recipe objects where possible
+            for f in data:
+                # try to find by title in local resep_data
+                match = next((r for r in resep_data if r["nama"].lower() == f.get("judul_resep", "").lower()), None)
+                if match:
+                    item = match.copy()
+                    item["saved_by"] = f.get("username")
+                    favorit_resep.append(item)
+                else:
+                    # fallback create minimal object
+                    favorit_resep.append({"nama": f.get("judul_resep"), "bahan": [f.get("bahan")], "langkah": "", "gambar": "", "saved_by": f.get("username")})
+            return render_template("favorit.html", favorit=favorit_resep)
+    except Exception:
+        # API unavailable — fallback to local favorit_data file
+        pass
+
+    # Fallback: use local file-based favorites
     if role == "admin":
         visible = favorit_data
     else:
         visible = [f for f in favorit_data if f.get("username") == username]
 
-    favorit_resep = []
     for fav in visible:
         for r in resep_data:
             if r["nama"] == fav["nama"]:
@@ -396,6 +602,33 @@ def admin_user_action():
         json.dump(current_users, f, ensure_ascii=False, indent=4)
 
     return redirect(url_for("admin_panel"))
+
+
+@app.route('/auth/sync', methods=['POST'])
+def auth_sync():
+    """Sinkronisasi session Flask setelah otentikasi lewat API eksternal.
+
+    Body JSON: { "username": "...", "role": "user" }
+    """
+    data = request.get_json(force=True)
+    username = data.get('username')
+    role = data.get('role', 'user')
+    if not username:
+        return ('', 400)
+
+    # pastikan user ada di data/users.json (tambah minimal record jika belum)
+    if not any(u.get('username') == username for u in users):
+        users.append({
+            'username': username,
+            'password': generate_password_hash(''),
+            'role': role,
+        })
+        with open(users_file, 'w', encoding='utf-8') as f:
+            json.dump(users, f, ensure_ascii=False, indent=4)
+
+    session['username'] = username
+    session['role'] = role
+    return ('', 200)
 
 
 @app.route("/hapus", methods=["POST"])

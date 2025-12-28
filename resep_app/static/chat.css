@@ -4,6 +4,28 @@
 .sc-window { width: 320px; max-height: 420px; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); overflow: hidden; display: flex; flex-direction: column; margin-top: 8px; }
 .sc-window.hidden { display: none; }
 .sc-header { background: #ff7e5f; color: white; padding: 10px; display:flex; align-items:center; justify-content:space-between; }
+.sc-header .sc-close {
+	background: rgba(255,255,255,0.14);
+	color: #fff;
+	border: none;
+	padding: 4px 8px;
+	border-radius: 8px;
+	cursor: pointer;
+	font-size: 16px;
+	line-height: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	transition: background .15s, transform .12s;
+}
+.sc-header .sc-close:hover {
+	background: rgba(255,255,255,0.22);
+	transform: translateY(-1px);
+}
+.sc-header .sc-close:focus {
+	outline: 2px solid rgba(255,255,255,0.32);
+	outline-offset: 2px;
+}
 .sc-messages { padding: 10px; overflow-y: auto; flex: 1; background: #fffaf3; }
 .sc-message { margin-bottom: 8px; padding: 8px 10px; border-radius: 8px; max-width: 90%; }
 .sc-message.user { background: #ffd9c7; align-self: flex-end; }

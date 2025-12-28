@@ -7,14 +7,6 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: #f9fafc;
-      margin: 0;
-      padding: 0;
-      color: #333;
-    }
-
     .container {
       max-width: 800px;
       margin: 30px auto;
@@ -22,17 +14,6 @@
       border-radius: 20px;
       padding: 30px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    header h1 {
-      color: #ff7f50;
-      font-size: 2rem;
-      margin-bottom: 8px;
     }
 
     .subtitle {
@@ -133,29 +114,6 @@
       margin-top: 25px;
     }
 
-    .btn, .back-btn {
-      background: #ff7f50;
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 12px;
-      cursor: pointer;
-      text-decoration: none;
-      font-weight: bold;
-      display: inline-block;
-      transition: background 0.3s;
-    }
-
-    .btn:hover, .back-btn:hover {
-      background: #ff5c25;
-    }
-
-    .back-btn {
-      margin-top: 15px;
-      display: block;
-      text-align: center;
-    }
-
     .no-result {
       text-align: center;
       font-style: italic;
@@ -213,12 +171,33 @@
     {% if hasil and (not pesan or forced) %}
       <div class="resep-list">
         {% for r in hasil %}
-          <div class="resep-card">
-            <img src="{{ url_for('static', filename=r.gambar) }}" alt="Gambar {{ r.nama }}">
+          <div class="resep-card" data-nama="{{ r.nama }}">
             <div class="resep-info">
               <h2>{{ r.nama }}</h2>
-              <p><strong>Bahan:</strong> {{ ', '.join(r.bahan) }}</p>
-              <p><strong>Langkah:</strong> {{ r.langkah }}</p>
+              <p class="preview-ingredients"><strong>Bahan:</strong> {{ r.bahan | join(', ') | truncate(80, True, '...') }}</p>
+              {% if r.langkah %}
+                <p class="preview-steps"><strong>Cuplikan langkah:</strong> {{ r.langkah | join(' ') | truncate(100, True, '...') }}</p>
+              {% endif %}
+
+              <div class="full-content" style="display:none; margin-top:10px;">
+                <p><strong>Bahan lengkap:</strong></p>
+                <ul>
+                  {% for ing in r.bahan | pretty_ingredients %}
+                    <li>{{ ing }}</li>
+                  {% endfor %}
+                </ul>
+                <p><strong>Langkah lengkap:</strong></p>
+                <ol>
+                  {% for step in r.langkah | pretty_steps %}
+                    <li>{{ step }}</li>
+                  {% endfor %}
+                </ol>
+              </div>
+
+              <p style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+                <button class="btn btn-save" data-judul="{{ r.nama }}">⭐ Simpan</button>
+                <button class="btn btn-toggle">Tampilkan lengkap</button>
+              </p>
             </div>
           </div>
         {% endfor %}
@@ -259,21 +238,19 @@
       </div>
     {% endif %}
 
-    <form action="/simpan" method="POST" class="save-form">
+    <div class="save-form">
       {% if session.get('username') and prediksi %}
-        <input type="hidden" name="bahan" value="{{ ','.join(bahan) }}">
-        <input type="hidden" name="resep" value="{{ prediksi }}">
-        <button type="submit" class="btn">💾 Simpan ke Favorit</button>
+        <a class="btn" href="/favorit">⭐ Lihat Favorit</a>
       {% elif not session.get('username') and prediksi %}
         <p style="text-align:center;">Silakan <a href="{{ url_for('login') }}">login</a> untuk menyimpan resep ke favorit.</p>
       {% endif %}
-    </form>
+    </div>
 
     <a href="/" class="back-btn">🔙 Kembali ke Beranda</a>
   </div>
   <!-- SmartchefAI widget -->
   <div id="smartchef-widget">
-    <div class="sc-toggle">SmartchefAI</div>
+    <div class="sc-toggle">Chat</div>
     <div class="sc-window hidden">
       <div class="sc-header">SmartchefAI <button class="sc-close">×</button></div>
       <div class="sc-messages"></div>
@@ -284,5 +261,60 @@
     </div>
   </div>
   <script src="{{ url_for('static', filename='chat.js') }}"></script>
+  <script>
+    // small toast helper
+    (function(){
+      const c = document.createElement('div');
+      c.id = 'notif-container';
+      c.setAttribute('aria-live','polite');
+      c.style.position='fixed'; c.style.top='16px'; c.style.right='16px'; c.style.zIndex=10000;
+      document.body.appendChild(c);
+      window.showNotif = function(type, message, timeout=3000){
+        const el = document.createElement('div'); el.className = 'notif '+type; el.textContent=message; el.style.minWidth='220px'; el.style.padding='10px 14px'; el.style.borderRadius='8px'; el.style.color='#fff'; el.style.boxShadow='0 6px 18px rgba(0,0,0,.12)'; el.style.marginTop='8px'; el.style.opacity='0'; el.style.transform='translateY(-8px)'; el.style.transition='all .22s';
+        if(type==='success') el.style.background='#28a745'; if(type==='error') el.style.background='#d9534f'; if(type==='info') el.style.background='#007bff';
+        c.appendChild(el);
+        requestAnimationFrame(()=>{ el.style.opacity='1'; el.style.transform='none'; });
+        if(timeout>0) setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(-8px)'; setTimeout(()=> el.remove(),220); }, timeout);
+      };
+    })();
+
+    // Per-item save + toggle handlers
+    const username = '{{ session.get("username") or "" }}';
+
+    async function saveByName(username, judul, btn){
+      if(!username){ showNotif('info','Silakan login terlebih dahulu'); return; }
+      btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Menyimpan...';
+      try{
+        const res = await fetch(`http://127.0.0.1:8000/api/favorites/by-name/${username}`, {
+          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({judul})
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok){ showNotif('error', data.detail || data.message || 'Gagal menyimpan'); btn.disabled=false; btn.textContent=orig; return; }
+        showNotif('success', data.message || 'Berhasil disimpan');
+        setTimeout(()=>{ window.location.href = '/favorit'; }, 600);
+      }catch(err){ showNotif('error', 'Terjadi kesalahan: '+ (err.message||err)); btn.disabled=false; btn.textContent=orig; }
+    }
+
+    document.querySelectorAll('.btn-save').forEach(b => {
+      b.addEventListener('click', function(){
+        const judul = this.dataset.judul;
+        saveByName(username, judul, this);
+      })
+    });
+
+    document.querySelectorAll('.btn-toggle').forEach(b => {
+      b.addEventListener('click', function(){
+        const card = this.closest('.resep-card');
+        const full = card.querySelector('.full-content');
+        const previewIng = card.querySelector('.preview-ingredients');
+        const previewStep = card.querySelector('.preview-steps');
+        if(full.style.display === 'none'){
+          full.style.display = 'block'; this.textContent = 'Sembunyikan lengkap'; if(previewIng) previewIng.style.display='none'; if(previewStep) previewStep.style.display='none';
+        } else {
+          full.style.display = 'none'; this.textContent = 'Tampilkan lengkap'; if(previewIng) previewIng.style.display='block'; if(previewStep) previewStep.style.display='block';
+        }
+      })
+    });
+  </script>
 </body>
 </html>
