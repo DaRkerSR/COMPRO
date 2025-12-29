@@ -7,13 +7,6 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: #f9fafc;
-      margin: 0;
-      padding: 0;
-      color: #333;
-    }
 
     .container {
       max-width: 800px;
@@ -82,39 +75,8 @@
       color: #444;
     }
 
-    .hapus-btn {
-      background: #ff4500;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-
-    .hapus-btn:hover {
-      background: #e63900;
-    }
-
-    .back-btn {
-      background: #ff7f50;
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 12px;
-      cursor: pointer;
-      text-decoration: none;
-      font-weight: bold;
-      display: inline-block;
-      transition: background 0.3s;
-      margin-top: 25px;
-    }
-
-    .back-btn:hover {
-      background: #ff5c25;
-    }
-
+    /* .hapus-btn now uses the global .btn styles for consistent appearance */
+    
     .no-favorit {
       text-align: center;
       font-style: italic;
@@ -147,17 +109,42 @@
       <div class="resep-list">
         {% for r in favorit %}
           <div class="resep-card">
-            <img src="{{ url_for('static', filename=r.gambar) }}" alt="Gambar {{ r.nama }}">
             <div class="resep-info">
               <h2>{{ r.nama }}</h2>
-              <p><strong>Bahan:</strong> {{ ', '.join(r.bahan) }}</p>
-              <p><strong>Langkah:</strong> {{ r.langkah }}</p>
               {% if session.get('role') == 'admin' or session.get('username') == r.saved_by %}
-                <form action="/hapus" method="POST" style="display: inline;">
-                  <input type="hidden" name="nama" value="{{ r.nama }}">
-                  <button type="submit" class="hapus-btn">🗑️ Hapus</button>
-                </form>
               {% endif %}
+
+              <p class="preview-ingredients"><strong>Bahan:</strong> {{ r.bahan | join(', ') | truncate(120, True, '...') }}</p>
+              {% if r.langkah %}
+                <p class="preview-steps"><strong>Cuplikan langkah:</strong> {{ r.langkah | join(' ') | truncate(140, True, '...') }}</p>
+              {% endif %}
+
+              <p style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+                {% if session.get('role') == 'admin' or session.get('username') == r.saved_by %}
+                  <form action="/hapus" method="POST" style="display:inline; margin:0;">
+                    <input type="hidden" name="nama" value="{{ r.nama }}">
+                    <button type="submit" class="btn hapus-btn">🗑️ Hapus</button>
+                  </form>
+                {% endif %}
+                <button class="btn btn-toggle">Tampilkan lengkap</button>
+              </p>
+
+              <div class="full-content" style="display:none; margin-top:10px;">
+                <p><strong>Bahan lengkap:</strong></p>
+                <ul>
+                  {% for ing in r.bahan | pretty_ingredients %}
+                    <li>{{ ing }}</li>
+                  {% endfor %}
+                </ul>
+                {% if r.langkah %}
+                  <p><strong>Langkah lengkap:</strong></p>
+                  <ol>
+                    {% for step in r.langkah | pretty_steps %}
+                      <li>{{ step }}</li>
+                    {% endfor %}
+                  </ol>
+                {% endif %}
+              </div>
               {% if session.get('role') == 'admin' %}
                 <p><small>Saved by: {{ r.saved_by }}</small></p>
               {% endif %}
@@ -184,5 +171,21 @@
     </div>
   </div>
   <script src="{{ url_for('static', filename='chat.js') }}"></script>
+  <script>
+    // Toggle detail view per card
+    document.querySelectorAll('.btn-toggle').forEach(b => {
+      b.addEventListener('click', function(){
+        const card = this.closest('.resep-card');
+        const full = card.querySelector('.full-content');
+        const previewIng = card.querySelector('.preview-ingredients');
+        const previewStep = card.querySelector('.preview-steps');
+        if(full.style.display === 'none'){
+          full.style.display = 'block'; this.textContent = 'Sembunyikan lengkap'; if(previewIng) previewIng.style.display='none'; if(previewStep) previewStep.style.display='none';
+        } else {
+          full.style.display = 'none'; this.textContent = 'Tampilkan lengkap'; if(previewIng) previewIng.style.display='block'; if(previewStep) previewStep.style.display='block';
+        }
+      })
+    });
+  </script>
 </body>
 </html>

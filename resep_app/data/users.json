@@ -28,5 +28,10 @@
         "username": "angga",
         "password": "scrypt:32768:8:1$c42j9encs4TXHeNu$b452c2d55447931e2716f4db3a671e82e92be058919aa5d1e51e8d8334e53c3dd3239df4bcb37148a0091cba6a2c5d7ba1b73e8f6777d9d07b987536a1c01d2d",
         "role": "user"
+    },
+    {
+        "username": "sule",
+        "password": "scrypt:32768:8:1$TDxLC6gRMyEkfrP2$6038e4ade53c2fc6a776cad667434c27c7ae3a60042fee40419117f6bd67f143e0033941cc4d3c43e4fef4e281e58c5714f105fb63a3f911dc7587e3f3f327d9",
+        "role": "user"
     }
 ]

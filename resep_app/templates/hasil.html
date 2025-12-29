@@ -158,7 +158,7 @@
       {% endif %}
 
       {% if prediksi %}
-        <p><strong>Prediksi utama AI:</strong> <span class="highlight">{{ prediksi }}</span></p>
+        <p><strong>Prediksi resep utama AI:</strong> <span class="highlight">{{ prediksi }}</span></p>
       {% endif %}
 
       {% if pesan %}
@@ -194,8 +194,8 @@
                 </ol>
               </div>
 
-              <p style="margin-top:10px; display:flex; gap:8px; align-items:center;">
-                <button class="btn btn-save" data-judul="{{ r.nama }}">⭐ Simpan</button>
+                <p style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+                <button class="btn btn-save" data-judul="{{ r.nama }}" data-id="{{ r.get('id_resep_makanan', '') }}">⭐ Simpan</button>
                 <button class="btn btn-toggle">Tampilkan lengkap</button>
               </p>
             </div>
@@ -281,24 +281,41 @@
     // Per-item save + toggle handlers
     const username = '{{ session.get("username") or "" }}';
 
-    async function saveByName(username, judul, btn){
+    async function saveByName(username, judul, btn, id){
       if(!username){ showNotif('info','Silakan login terlebih dahulu'); return; }
       btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Menyimpan...';
       try{
+        // Prefer saving by recipe ID (unambiguous)
+        if(id){
+          const res = await fetch(`http://127.0.0.1:8000/api/favorites/${username}/${id}`, { method: 'POST' });
+          const data = await res.json().catch(()=>({}));
+          if(!res.ok){ showNotif('error', data.detail || data.message || 'Gagal menyimpan'); btn.disabled=false; btn.textContent=orig; return; }
+          const msg = data.message || 'Berhasil disimpan';
+          const isAlready = msg.toLowerCase().includes('already') || msg.toLowerCase().includes('sudah');
+          showNotif(isAlready ? 'error' : 'success', msg);
+          // indicate saved on the button only when actually saved
+          if(!isAlready){ try{ btn.textContent = 'Tersimpan'; btn.disabled = true; }catch(e){} }
+          return;
+        }
+
+        // Fallback: save by name (older API)
         const res = await fetch(`http://127.0.0.1:8000/api/favorites/by-name/${username}`, {
           method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({judul})
         });
         const data = await res.json().catch(()=>({}));
         if(!res.ok){ showNotif('error', data.detail || data.message || 'Gagal menyimpan'); btn.disabled=false; btn.textContent=orig; return; }
-        showNotif('success', data.message || 'Berhasil disimpan');
-        setTimeout(()=>{ window.location.href = '/favorit'; }, 600);
+        const msg = data.message || 'Berhasil disimpan';
+        const isAlready = msg.toLowerCase().includes('already') || msg.toLowerCase().includes('sudah');
+        showNotif(isAlready ? 'error' : 'success', msg);
+        if(!isAlready){ try{ btn.textContent = 'Tersimpan'; btn.disabled = true; }catch(e){} }
       }catch(err){ showNotif('error', 'Terjadi kesalahan: '+ (err.message||err)); btn.disabled=false; btn.textContent=orig; }
     }
 
     document.querySelectorAll('.btn-save').forEach(b => {
       b.addEventListener('click', function(){
         const judul = this.dataset.judul;
-        saveByName(username, judul, this);
+        const id = this.dataset.id || null;
+        saveByName(username, judul, this, id);
       })
     });
 

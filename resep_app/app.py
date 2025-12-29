@@ -356,9 +356,9 @@ def rekomendasi():
             flash("Terjadi kesalahan pada perhitungan similarity.", "error")
             return render_template("hasil.html", hasil=[], bahan=user_inputs, prediksi=None, rekomendasi=[], pesan="Terjadi kesalahan pada perhitungan similarity.")
 
-        # sort by (exact score, semantic score)
+        # sort by (exact score, semantic score) and return all matching recipes
         top_exact_sorted = sorted(top_exact, key=lambda t: (t[1], sim_scores[t[0]]), reverse=True)
-        top_idx = [t[0] for t in top_exact_sorted[:3]]
+        top_idx = [t[0] for t in top_exact_sorted]
         hasil_resep = [resep_data[i] for i in top_idx]
 
         # Prepare messages
@@ -387,7 +387,8 @@ def rekomendasi():
     except Exception:
         flash("Terjadi kesalahan pada perhitungan similarity.", "error")
         return render_template("hasil.html", hasil=[], bahan=user_inputs, prediksi=None, rekomendasi=[], pesan="Terjadi kesalahan pada perhitungan similarity.")
-    top_idx = sim_scores.argsort()[-3:][::-1]
+    # sort all recipes by descending semantic score and return them all
+    top_idx = sim_scores.argsort()[::-1]
     hasil_resep = [resep_data[i] for i in top_idx]
     skor_tertinggi = sim_scores[top_idx[0]]
 
@@ -441,7 +442,22 @@ def chat():
     if not msg:
         return json.dumps({'reply': 'Silakan tulis pertanyaan.'}), 200, {'Content-Type': 'application/json'}
 
-    # normalize and compute token overlap with recipes
+    # First, attempt to proxy to SmartChef API chatbot endpoint if available
+    base_api = os.environ.get("SMARTCHEF_API", "http://127.0.0.1:8000/api")
+    chat_api = f"{base_api}/chatbot/search"
+    try:
+        resp = requests.post(chat_api, json={"message": msg}, timeout=3)
+        if resp.ok:
+            # FastAPI returns {'response': '...'} per schemas.ChatResponse
+            data = resp.json()
+            # If API returns expected shape, forward it
+            if isinstance(data, dict) and "response" in data:
+                return json.dumps({"reply": data.get("response")}), 200, {"Content-Type": "application/json"}
+    except Exception:
+        # fall through to local rule-based reply
+        pass
+
+    # Fallback local rule-based reply (token overlap)
     msg_tokens = set(clean_text(msg).split())
     scores = []
     for idx, toks in enumerate(resep_tokens_global):
@@ -453,23 +469,13 @@ def chat():
         top = [resep_data[i]['nama'] for i, s in scores if s > 0][:3]
         reply = f"Saya menemukan resep yang mengandung bahan tersebut: {', '.join(top)}. Ketik nama resep untuk detail atau minta rekomendasi lain."
     else:
-        reply = f"Hai — saya SmartchefAI. Saya belum terhubung ke model eksternal. Saya menerima: '{msg}'. Coba tanya nama bahan atau minta rekomendasi sederhana."
+        reply = f"Hai — saya SmartchefAI. Saya menerima: '{msg}'. Coba tanya nama bahan atau minta rekomendasi sederhana."
 
     return json.dumps({'reply': reply}), 200, {'Content-Type': 'application/json'}
 
 
-@app.route('/detail/<int:rid>')
-def detail(rid):
-    # find recipe by id or fallback to name match
-    recipe = next((r for r in resep_data if r.get('id_resep_makanan') == rid or str(r.get('id_resep_makanan')) == str(rid)), None)
-    if not recipe:
-        # try by name (rare fallback)
-        name = request.args.get('nama', '')
-        recipe = next((r for r in resep_data if r.get('nama','').lower() == name.lower()), None)
-    if not recipe:
-        flash('Resep tidak ditemukan.', 'error')
-        return redirect(url_for('index'))
-    return render_template('detail.html', r=recipe)
+# Detail page removed — detail rendering is provided by the SmartChef API
+# Local `/detail/<rid>` route was removed to avoid serving the duplicate `detail.html` template.
 
 
 @app.route("/simpan", methods=["POST"])
@@ -486,7 +492,11 @@ def simpan():
         favorit_data.append({"username": username, "nama": resep, "bahan": bahan})
         with open(favorit_file, "w", encoding="utf-8") as f:
             json.dump(favorit_data, f, ensure_ascii=False, indent=4)
-    return redirect(url_for("favorit"))
+    # Redirect back to referring page if available, otherwise to index
+    ref = request.referrer
+    if ref:
+        return redirect(ref)
+    return redirect(url_for("index"))
 
 
 @app.route("/favorit")
@@ -640,6 +650,26 @@ def hapus():
     username = session["username"]
     role = session.get("role", "user")
     global favorit_data
+    # Try deleting via SmartChef API if available (keeps server-side favorites in sync)
+    api_base = os.environ.get("SMARTCHEF_API", "http://127.0.0.1:8000/api")
+    try:
+        # try to map recipe name to an id in local resep_data
+        match = next((r for r in resep_data if r.get('nama','').lower() == nama.lower()), None)
+        if match and match.get('id_resep_makanan'):
+            rid = match.get('id_resep_makanan')
+            try:
+                resp = requests.delete(f"{api_base}/favorites/{username}/{rid}", timeout=3)
+                if resp.ok:
+                    return redirect(url_for("favorit"))
+            except Exception:
+                # fall through to local deletion if API call fails
+                pass
+
+    except Exception:
+        # ignore mapping errors and fallback to local file
+        pass
+
+    # Fallback: delete from local favorit_data
     if role == "admin":
         favorit_data = [f for f in favorit_data if f.get("nama") != nama]
     else:
